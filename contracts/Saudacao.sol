@@ -2,13 +2,13 @@
 pragma solidity ^0.8.0;
 
 contract Saudacao {
-    string private _saudando;
+    string private _saudacao;
 
     constructor(string memory saudacao) {
-        _saudando = saudacao;
+        _saudacao = saudacao;
     }
 
     function saudar() public view returns (string memory) {
-        return _saudando;
+        return _saudacao;
     }
 }

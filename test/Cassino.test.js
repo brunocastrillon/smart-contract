@@ -3,14 +3,14 @@ const assert = require("chai").assert;
 const truffleAssert = require('truffle-assertions');
 
 contract('Cassino', (accounts) => {
-    const _cassino;
+    let _cassino;
     const _coeficiente = 10;
     const _contaCassino = accounts[0];
     const _reservaCassino = 100;
     const _apostador01 = accounts[1];
 
     beforeEach(async () => {
-        _cassino = await Cassino.new(_coeficiente, { from: _contaCassino });
+        _cassino = await Cassino.new({ from: _contaCassino, value: _coeficiente });
         await _cassino.reserva({ from: _contaCassino, value: _reservaCassino });
     });
 

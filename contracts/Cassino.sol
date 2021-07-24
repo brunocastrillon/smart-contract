@@ -10,9 +10,9 @@ contract Cassino is Ownable {
     event Apostar(address payable indexed jogador, uint256 tamanhoAposta, uint8 numeroAposta, uint8 numeroVencedor);
     event Pagar(address payable vencedor, uint256 valor);
  
-    constructor(uint256 coeficiente) {
+    constructor() payable {
         _owner = msg.sender;
-        _coeficiente = coeficiente;
+        _coeficiente = msg.value;
     }
 
     modifier ApostaValida(uint256 tamanhoAposta){

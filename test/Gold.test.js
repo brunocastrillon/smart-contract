@@ -25,11 +25,11 @@ describe('Gold', function () {
     //     expect((await this.contract.approve(owner, transfer))).to.equal(true);
     // });
 
-    it(`deverá realizar uma transferencia de ${owner} para ${account001}`, async function () {
-        await this.contract.approve(owner, transfer);
-        await this.contract.transferFrom(owner, account001, transfer);
-        expect((await this.contract.balanceOf(account001)).toString()).to.equal(transfer);
-    });
+    // it(`deverá realizar uma transferencia de ${owner} para ${account001}`, async function () {
+    //     await this.contract.approve(owner, transfer);
+    //     await this.contract.transferFrom(owner, account001, transfer);
+    //     expect((await this.contract.balanceOf(account001)).toString()).to.equal(transfer);
+    // });
 });
 
 // 0xEBf7f56cf9A8F8fc942CEE8a41f2F530DAed8586

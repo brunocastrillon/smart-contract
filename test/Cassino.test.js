@@ -60,5 +60,15 @@ contract('Cassino', (accounts) => {
 
         let reservaAtual = await web3.eth.getBalance(_cassino.address);
         assert.equal(reservaAtual, _reservaCassino - (coeficiente * tamanhoAposta));
+
+        // const jogadores = await _cassino.obterJogadores();
+
+        // console.log(jogadores);
     })
+
+    // it("deve validar a quantidade de jogadores", async () => {
+    //     const jogadores = await _cassino.obterJogadores();
+
+    //     console.log(jogadores);
+    // });
 });

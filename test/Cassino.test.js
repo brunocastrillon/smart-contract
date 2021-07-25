@@ -4,66 +4,61 @@ const truffleAssert = require('truffle-assertions');
 
 contract('Cassino', (accounts) => {
     let _cassino;
-    const _coeficiente = 10;
     const _contaCassino = accounts[0];
     const _reservaCassino = 100;
     const _apostador01 = accounts[1];
 
     beforeEach(async () => {
-        _cassino = await Cassino.new({ from: _contaCassino, value: _coeficiente });
-        await _cassino.reserva({ from: _contaCassino, value: _reservaCassino });
+        _cassino = await Cassino.new({ from: _contaCassino, value: _reservaCassino });
     });
 
     afterEach(async () => {
         await _cassino.fechar(_contaCassino);
     });
 
-    if ("deve validar a reserva total do cassino", async () => {
-        assert.equal(await web3.eth.getBalance(_cassino.address), _reservaCassino);
+    it("deve validar a reserva total do cassino", async () => {
+        let reservaAtual = await web3.eth.getBalance(_cassino.address);
+        assert.equal(reservaAtual, _reservaCassino);
     });
 
-    // it("deve perder quando apostar no numero errado", async () => {
-    //     let tamanhoAposta = 1;
-    //     let numeroAposta = (await web3.eth.getBlock("latest")).number % 10 + 1;
-    //     let transacao = await _cassino.apostar(numeroAposta, _apostador01, tamanhoAposta);
+    it("deve validar o coeficiente", async () => {
+        let coeficiente = await _cassino.obterCoeficiente();
+        assert.equal(coeficiente, _reservaCassino / 10);
+    });
 
-    //     truffleAssert.eventEmitted(transacao, 'Apostar', (ev) => {
-    //         return ev.jogador === _apostador01 && !ev.numeroAposta.eq(ev.numeroVencedor);
-    //     });
+    it("deve perder quando apostar no numero errado", async () => {
+        let tamanhoAposta = 1;
+        let coeficiente = await _cassino.obterCoeficiente();
+        let numeroAposta = (await web3.eth.getBlock("latest")).number % parseInt(coeficiente) + 1;
+        let transacao = await _cassino.apostar(numeroAposta, _apostador01, tamanhoAposta);
 
-    //     truffleAssert.eventNotEmitted(transacao, 'Pagar');
+        truffleAssert.eventEmitted(transacao, 'Apostar', (ev) => {
+            return ev.jogador === _apostador01 && !ev.numeroAposta.eq(ev.numeroVencedor);
+        });
 
-    //     let reservaAtual = await web3.eth.getBalance(_cassino.address);
-    //     console.log("reserva-atual: " + reservaAtual);
-    //     // let novoSaldo = parseInt(reservaAtual) + (tamanhoAposta * parseInt(_coeficiente));
-    //     // console.log("novo-saldo: " + novoSaldo);
-    //     // assert.equal(novoSaldo, _reservaCassino + (tamanhoAposta * _coeficiente));
-    // });
+        truffleAssert.eventNotEmitted(transacao, 'Pagar');
 
-    // it("deve ganhar quando apostar no numero certo", async () => {
-    //     let tamanhoAposta = 1;
-    //     let numeroAposta = ((await web3.eth.getBlock("latest")).number + 1) % 10 + 1;
-    //     let transacao = await cassino.apostar(numeroAposta, apostador01, tamanhoAposta);
+        await _cassino.coletar({ from: _apostador01, value: tamanhoAposta });
 
-    //     truffleAssert.eventEmitted(transacao, 'Apostar', (ev) => {
-    //         return ev.jogador === apostador01 && ev.numeroAposta.eq(ev.numeroVencedor);
-    //     });
+        let reservaAtual = await web3.eth.getBalance(_cassino.address);
+        assert.equal(reservaAtual, _reservaCassino + tamanhoAposta);
+    });
 
-    //     truffleAssert.eventEmitted(transacao, 'Pagar', (ev) => {
-    //         return ev.vencedor === apostador01 && ev.valor.toNumber() === 10 * tamanhoAposta;
-    //     });
+    it("deve ganhar quando apostar no numero certo", async () => {
+        let tamanhoAposta = 1;
+        let coeficiente = await _cassino.obterCoeficiente();
+        let numeroAposta = ((await web3.eth.getBlock("latest")).number + 1) % coeficiente + 1;
+        let transacao = await _cassino.apostar(numeroAposta, _apostador01, tamanhoAposta);
 
-    //     let reservaAtual = await web3.eth.getBalance(cassino.address);
-    //     console.log("reserva-atual: " + reservaAtual);
-    //     let novoSaldo = parseInt(reservaAtual)
+        truffleAssert.eventEmitted(transacao, 'Apostar', (ev) => {
+            return ev.jogador === _apostador01 && ev.numeroAposta.eq(ev.numeroVencedor);
+        });
 
-    //     assert.equal(reservaAtual, reservaCassino - )
+        truffleAssert.eventEmitted(transacao, 'Pagar', (ev) => {
+            return ev.vencedor === _apostador01 && ev.valor.toNumber() === coeficiente * tamanhoAposta;
+        });
 
-    //     //let novoSaldo = parseInt(await web3.eth.getBalance(cassino.address)) - tamanhoAposta
-    //     //let teste = reservaCassino + tamanhoAposta - tamanhoAposta * 10;
-    //     //console.log("teste: " + teste);
-    //     //console.log("reserva-aposta: " + reservaCassino - tamanhoAposta);
-    //     //assert.equal(novoSaldo, reservaCassino - tamanhoAposta);
-    //     //assert.equal(await web3.eth.getBalance(cassino.address), tamanhoReserva + tamanhoAposta - tamanhoAposta * 10);
-    // });     
+        let reservaAtual = await web3.eth.getBalance(_cassino.address);
+        assert.equal(reservaAtual, _reservaCassino - (coeficiente * tamanhoAposta));
+    })
 });

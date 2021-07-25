@@ -6,13 +6,15 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 contract Cassino is Ownable {
     address private _owner;
     uint256 private _coeficiente;
+    uint256 private _saldo;
 
     event Apostar(address payable indexed jogador, uint256 tamanhoAposta, uint8 numeroAposta, uint8 numeroVencedor);
     event Pagar(address payable vencedor, uint256 valor);
  
     constructor() payable {
         _owner = msg.sender;
-        _coeficiente = msg.value;
+        _saldo = msg.value;
+        _coeficiente = _saldo / 10; 
     }
 
     modifier ApostaValida(uint256 tamanhoAposta){
@@ -21,10 +23,12 @@ contract Cassino is Ownable {
     }    
 
     modifier LimiteAposta(uint256 tamanhoAposta){
-        uint256 limite = address(this).balance / 100;
+        uint256 limite = address(this).balance / _saldo;
         require(tamanhoAposta <= limite, 'o valor da aposta nao pode exceder o tamanho maximo da aposta');
         _;
     }
+
+    function coletar() external payable {}    
 
     function fechar
     (
@@ -36,8 +40,6 @@ contract Cassino is Ownable {
     {
         selfdestruct(owner);
     }
-
-    function reserva() external payable {}
 
     function apostar
     (
@@ -73,6 +75,10 @@ contract Cassino is Ownable {
     }
 
     function gerarNumeroVencedor() public view returns (uint8) {
-        return uint8(block.number % 10 + 1); //TODO: NÃO FAZER ISSO EM PRODUÇÃO!!!
+        return uint8(block.number % _coeficiente + 1); //TODO: NÃO FAZER ISSO EM PRODUÇÃO!!!
+    }
+
+    function obterCoeficiente() public view returns (uint256) {
+        return _coeficiente;
     }
 }

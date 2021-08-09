@@ -1,9 +1,15 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-contract Cafeteria {
+import "@openzeppelin/contracts/access/Ownable.sol";
+
+contract Cafeteria is Ownable {
     address public _dono;
     address public _cliente;
+
+	struct ItemMenu {
+		uint Id;
+	}
 
     struct Pedido {
 		uint Id;
@@ -18,8 +24,8 @@ contract Cafeteria {
 
     struct Fatura {
 		uint Id;
-		uint numeroPedio;
-		bool Criado;
+		uint IdPedido;
+		bool Criada;
 	}
 
 	mapping (uint => Pedido) _pedidos;
@@ -29,9 +35,9 @@ contract Cafeteria {
 	uint _sequencialFatura;
     
 	event PedidoEnviado(address cliente, string itemMenu, uint quantidade, uint numeroPedido);
-	event PrecoEnviado(address Cliente, uint numeroPedido, uint preco);     
-	event PagamentoSeguroEnviado(address cliente, uint pedidoNumero, uint valor, uint now);
-	event FaturaEnviada(address cliente, uint idFatura, uint numeroPedido, uint dataEntrega);
+	event PrecoEnviado(address Cliente, uint idPedido, uint preco);     
+	event PagamentoSeguroEnviado(address cliente, uint idPedido, uint valor, uint now);
+	event FaturaEnviada(address cliente, uint idFatura, uint idPedido, uint dataEntrega);
 	event PedidoEntregue(address cliente, uint idFatura, uint numeroPedido, uint dataEntregueVerdadeira);
 
     constructor(address comprador) payable {
@@ -55,6 +61,14 @@ contract Cafeteria {
 		_;
 	}
 
+	modifier FaturaExiste(uint id) {
+		require(
+			_faturas[id].Criada,
+			"fatura nao existe"
+			);
+		_;
+	}	
+
     function enviarPedido
 	(
 		string memory itemMenu,
@@ -71,78 +85,92 @@ contract Cafeteria {
 
     function verificarPedido
 	(
-		uint id
+		uint idPedido
 	)
 		view
 		public
-		PedidoExiste(id)
+		PedidoExiste(idPedido)
 		returns (address cliente, string memory itemMenu, uint quantidade, uint preco, uint pagmentoSeguro) {		
 		return(
 			_cliente,
-			_pedidos[id].itemMenu,
-			_pedidos[id].Quantity,
-			_pedidos[id].Preco,
-			_pedidos[id].PagamentoSeguro
+			_pedidos[idPedido].ItemMenu,
+			_pedidos[idPedido].Quantidade,
+			_pedidos[idPedido].Preco,
+			_pedidos[idPedido].PagamentoSeguro
 			);
 	}
 
 	function enviarPreco
 	(
-		uint numeroPedido,
+		uint idPedido,
 		uint preco
 	)
-		payable
 		public
+		onlyOwner
+		PedidoExiste(idPedido)
+		payable
 	{
-		require(msg.sender == _owner);          // only the owner can use this function
-		require(_orders[orderNo].Created);     // check the order exists
-
-		_orders[orderNo].Price = price; // set the order price
-		
-		emit PriceSent(_customer, orderNo, price);  // trigger PriceSent event
+		_pedidos[idPedido].Preco = preco;
+		emit PrecoEnviado(_cliente, idPedido, preco);
 	}
 
-    function sendSafePayment(uint orderNo) payable public {
-		require(_customer == msg.sender);       // only the customer can use this function
-		require(_orders[orderNo].Created);	   // check the order exists
-
-		_orders[orderNo].SafePayment = msg.value;    // payout
-
-		emit SafePaymentSent(msg.sender, orderNo, msg.value, block.timestamp); // trigger SafePaymentSent event
+    function enviarPagamentoSeguro
+	(
+		uint idPedido
+	)
+		public
+		SomenteCliente
+		PedidoExiste(idPedido)
+		payable
+	{
+		_pedidos[idPedido].PagamentoSeguro = msg.value;
+		emit PagamentoSeguroEnviado(msg.sender, idPedido, msg.value, block.timestamp);
 	}
 
-    function sendInvoice(uint orderNo, uint order_date) payable public {
-		require(_owner == msg.sender);        // only the owner can use this function
-		require(_orders[orderNo].Created);   // check the order exists
-		
-		_invoiceSeq++; // increase the invoice index
-		_invoices[_invoiceSeq] = Invoice(_invoiceSeq, orderNo, true); // create the invoice
-
-		_orders[orderNo].OrderDate = order_date; //  set the order date
-		
-		emit InvoiceSent(_customer, _invoiceSeq, orderNo, order_date);  // trigger InvoiceSent event
+    function enviarFatura
+	(
+		uint idPedido,
+		uint dataPedido
+	)
+		public
+		onlyOwner
+		PedidoExiste(idPedido)
+		payable
+	{
+		_sequencialFatura++;
+		_faturas[_sequencialFatura] = Fatura(_sequencialFatura, idPedido, true);
+		_pedidos[idPedido].DataPedido = dataPedido;
+		emit FaturaEnviada(_cliente, _sequencialFatura, idPedido, dataPedido);
 	}
 
-    function getInvoice(uint invoiceID) view public returns (address customer, uint orderNo, uint invoice_date){
-		require(invoices[invoiceID].created);// check the invoice exists
-	
-		Invoice storage _invoice = invoices[invoiceID];// get the related invoice info
-		Order storage _order     = orders[_invoice.orderNo];		// get the related order info
-		
-		return (customerAddress, _order.ID, _order.orderDate);// return the invoice
+    function obterFatura
+	(
+		uint idFatura
+	)
+		public
+		view
+		FaturaExiste(idFatura)
+		returns (address cliente, uint idPedido, uint dataFatura)
+	{
+		Fatura storage fatura = _faturas[idFatura];
+		Pedido storage pedido = _pedidos[fatura.IdPedido];
+		return (_cliente, pedido.Id, pedido.DataPedido);
 	}
 
-    function markOrderDelivered(uint invoiceID, uint delivery_date) payable public {
-		require(customerAddress == msg.sender); // only the customer can use this function
-		require(invoices[invoiceID].created); // check the invoice exists
-		
-		Invoice storage _invoice = invoices[invoiceID]; // get the related invoice info
-		Order storage _order     = orders[_invoice.orderNo];	 // get the related order info
-		
-		_order.deliveryDate = delivery_date; // set the delivery date
-		
-		emit OrderDelivered(customerAddress, invoiceID, _order.ID, delivery_date); // trigger OrderDelivered event
-		
-		owner.transfer(_order.safePayment); // payout
+    function MarcarPedidoEntregue
+	(
+		uint idFatura,
+		uint dataEntrega
+	)
+		public
+		SomenteCliente
+		FaturaExiste(idFatura)
+		payable
+	{
+		Fatura storage fatura = _faturas[idFatura];
+		Pedido storage pedido = _pedidos[fatura.IdPedido];
+		pedido.DataEntrega = dataEntrega;
+		payable(_dono).transfer(pedido.PagamentoSeguro);
+		emit PedidoEntregue(_cliente, idFatura, pedido.Id, dataEntrega); 
 	}    
 }

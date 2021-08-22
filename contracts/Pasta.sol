@@ -11,7 +11,7 @@ contract Pasta {
 
     mapping(address => Arquivo[]) _arquivos;
 
-    event Salvo(string hashh, address remetente);
+    event adicionado(string hashh, address remetente);
 
     constructor() {
 
@@ -32,7 +32,7 @@ contract Pasta {
             DataEnvio: data
         }));
 
-        emit Salvo(hashh, msg.sender);
+        emit adicionado(hashh, msg.sender);
     }
 
     function listar()
@@ -50,7 +50,7 @@ contract Pasta {
         (
             string memory hashh,
             string memory nome,
-            string memory tipoh,
+            string memory tipo,
             uint data
         )
     {

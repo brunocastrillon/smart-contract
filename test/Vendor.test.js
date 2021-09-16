@@ -1,11 +1,25 @@
-const { accounts, contract } = require('@openzeppelin/test-environment');
-const { use, expect } = require('chai');
+const {
+    accounts,
+    contract } = require('@openzeppelin/test-environment');
+
+const {
+    deployContract,
+    MockProvider,
+    solidity } = require('ethereum-waffle');
+
+const {
+    use,
+    expect } = require('chai');
+    
 const { ethers } = require('ethers');
 const truffleAssert = require('truffle-assertions');
+
 const Vendor = contract.fromArtifact('Vendor');
 const Gold = contract.fromArtifact('Gold');
 
-describe('Staker dApp', function () {
+use(solidity);
+
+describe('vendor-dapp', function () {
     let _vendor;
     let _token
     let _vendorTokensSupply;
@@ -29,24 +43,48 @@ describe('Staker dApp', function () {
     });
 
     describe('testando o metodo comprar()', () => {
-        it('comprar reverteu a transacao, eth nao enviado', async () => {
-            const amount = ethers.utils.parseEther('0');
-            const vendor = await _vendor.comprar({ from: _addr1, value: amount });
+        // it('comprador nao enviou ETH suficiente, transacao foi revertida', async () => {
+        //     const amount = ethers.utils.parseEther('0');
 
-            expect(await _vendor.comprar({ from: _addr1, value: amount })).should.be.rejectedWith('quantidade de ETH insuficiente');
-            //await expect(_vendor.comprar({ from: _addr1, value: amount }),).to.be.rejectedWith('quantidade de ETH insuficiente');
-            //await expect(_vendor.comprar({ from: _addr1, value: amount }),).to.eventually.be.rejectedWith("quantidade de ETH insuficiente");
-        });
+        //     await expect(
+        //         _vendor.comprar({ from: _addr1, value: amount })
+        //     ).to.be.revertedWith("quantidade de ETH insuficiente");
+        // });
+
+        // it('distribuidor nao possui tokens suficiente, transacao foi revertida', async () => {
+        //     const amount = ethers.utils.parseEther('93');
+
+        //     await expect(
+        //         _vendor.comprar({ from: _addr1, value: amount })
+        //     ).to.be.revertedWith("saldo do distribuidor insuficiente");
+        // });
+
+        it('token comprado com sucesso', async () => {
+            const amount = ethers.utils.parseEther('1.0');
+
+            // - checando se o processo de compra ocorreu com sucesso e se emitu o evento
+            let vendor = await _vendor.comprar({ from: _addr1, value: amount });
+            truffleAssert.eventEmitted(vendor, 'ComprarToken', (ev) => {
+                return ev.comprador === _addr1 && ev.quantidadeETH == amount.toString(10) && ev.quantidadeGLD == amount.mul(_paridade.toString()).toString(10);
+            });
+
+            // - checando o saldo de tokens do usuario
+            const userTokenBalance = await _token.balanceOf(_addr1);
+            const userTokenAmount =  ethers.utils.parseEther('100.0');
+            expect(userTokenBalance.toString()).to.equal(userTokenAmount.toString(10));
+
+            // - checando o saldo de tokens do distribuidor
+            const vendorTokenBalance = await _token.balanceOf(_vendor.address);
+            expect(vendorTokenBalance.toString()).to.equal(ethers.BigNumber.from(_vendorTokensSupply.toString()).sub(userTokenAmount).toString());
+
+            // - checando o saldo de ETH do distribuidor
+            const vendorBalance = await ethers.provider.getBalance(_vendor.address);
+        });        
     });
-
-    // it('devera realizar uma compra de tokens', async () => {
-    //     const amount = ethers.utils.parseEther('1');
-    //     const vendor = await _vendor.comprar({ from: _addr1, value: amount })
-
-    //     truffleAssert.eventEmitted(vendor, 'ComprarToken', (ev) => {
-    //         //return ev.comprador === _addr1;
-    //         return ev.comprador === _addr1 && ev.quantidadeETH === ethers.utils.formatEther(amount);
-    //         //return ev.comprador === _addr1 && ev.quantidadeETH === amount && ev.quantidadeGLD === amount.mul(_paridade);
-    //     });
-    // });
 });
+
+// - checando se o processo de compra ocorreu com sucesso e se emitu o evento
+// - Error: [object Promise] is not a valid transaction
+// await expect(
+//     _vendor.comprar({ from: _addr1, value: amount })
+// ).to.emit(_vendor, 'ComprarToken').withArgs(_addr1, amount.toString(10), amount.mul(_paridade.toString()).toString(10));

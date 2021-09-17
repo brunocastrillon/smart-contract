@@ -1,6 +1,7 @@
 const {
     accounts,
-    contract } = require('@openzeppelin/test-environment');
+    contract, 
+    web3} = require('@openzeppelin/test-environment');
 
 const {
     deployContract,
@@ -43,21 +44,21 @@ describe('vendor-dapp', function () {
     });
 
     describe('testando o metodo comprar()', () => {
-        // it('comprador nao enviou ETH suficiente, transacao foi revertida', async () => {
-        //     const amount = ethers.utils.parseEther('0');
+        it('comprador nao enviou ETH suficiente, transacao foi revertida', async () => {
+            const amount = ethers.utils.parseEther('0');
 
-        //     await expect(
-        //         _vendor.comprar({ from: _addr1, value: amount })
-        //     ).to.be.revertedWith("quantidade de ETH insuficiente");
-        // });
+            await expect(
+                _vendor.comprar({ from: _addr1, value: amount })
+            ).to.be.revertedWith("quantidade de ETH insuficiente");
+        });
 
-        // it('distribuidor nao possui tokens suficiente, transacao foi revertida', async () => {
-        //     const amount = ethers.utils.parseEther('93');
+        it('distribuidor nao possui tokens suficiente, transacao foi revertida', async () => {
+            const amount = ethers.utils.parseEther('93');
 
-        //     await expect(
-        //         _vendor.comprar({ from: _addr1, value: amount })
-        //     ).to.be.revertedWith("saldo do distribuidor insuficiente");
-        // });
+            await expect(
+                _vendor.comprar({ from: _addr1, value: amount })
+            ).to.be.revertedWith("saldo do distribuidor insuficiente");
+        });
 
         it('token comprado com sucesso', async () => {
             const amount = ethers.utils.parseEther('1.0');
@@ -78,7 +79,8 @@ describe('vendor-dapp', function () {
             expect(vendorTokenBalance.toString()).to.equal(ethers.BigNumber.from(_vendorTokensSupply.toString()).sub(userTokenAmount).toString());
 
             // - checando o saldo de ETH do distribuidor
-            const vendorBalance = await ethers.provider.getBalance(_vendor.address);
+            let vendorETHBalance = await web3.eth.getBalance(_vendor.address);
+            expect(vendorETHBalance).to.equal(amount);
         });        
     });
 });

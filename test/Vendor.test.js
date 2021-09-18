@@ -1,7 +1,7 @@
 const {
     accounts,
-    contract, 
-    web3} = require('@openzeppelin/test-environment');
+    contract,
+    web3 } = require('@openzeppelin/test-environment');
 
 const {
     deployContract,
@@ -11,7 +11,7 @@ const {
 const {
     use,
     expect } = require('chai');
-    
+
 const { ethers } = require('ethers');
 const truffleAssert = require('truffle-assertions');
 
@@ -28,9 +28,9 @@ describe('vendor-dapp', function () {
 
     const _owner = accounts[0];
     const _addr1 = accounts[1];
-    const _addr2 = accounts[2];
-    const _addr3 = accounts[3];
-    const _supply = 1000 * 10 ** 18;
+    // const _addr2 = accounts[2];
+    // const _addr3 = accounts[3];
+    // const _supply = 1000 * 10 ** 18;
 
     beforeEach(async function () {
         _token = await Gold.new({ from: _owner });
@@ -71,7 +71,7 @@ describe('vendor-dapp', function () {
 
             // - checando o saldo de tokens do usuario
             const userTokenBalance = await _token.balanceOf(_addr1);
-            const userTokenAmount =  ethers.utils.parseEther('100.0');
+            const userTokenAmount = ethers.utils.parseEther('100.0');
             expect(userTokenBalance.toString()).to.equal(userTokenAmount.toString(10));
 
             // - checando o saldo de tokens do distribuidor
@@ -81,7 +81,25 @@ describe('vendor-dapp', function () {
             // - checando o saldo de ETH do distribuidor
             let vendorETHBalance = await web3.eth.getBalance(_vendor.address);
             expect(vendorETHBalance).to.equal(amount);
-        });        
+        });
+    });
+
+    // describe('testando o metodo vender()', () => {
+
+    // });
+
+    describe('testando o metodo sacar()', () => {
+        it('o saque foi revertido porque o requerente nao e o dono', async () => {
+            await expect(
+                _vendor.sacar({ from: _addr1 })
+            ).to.be.revertedWith("Ownable: caller is not the owner");
+        });
+
+        it('o saque foi revertido porque o dono nao possui saldo suficiente', async () => {
+            await expect(
+                _vendor.sacar({ from: _owner })
+            ).to.be.revertedWith("sem saldo para saque");
+        });
     });
 });
 
@@ -90,3 +108,5 @@ describe('vendor-dapp', function () {
 // await expect(
 //     _vendor.comprar({ from: _addr1, value: amount })
 // ).to.emit(_vendor, 'ComprarToken').withArgs(_addr1, amount.toString(10), amount.mul(_paridade.toString()).toString(10));
+
+// Falha ao enviar saldo do usuário de volta para o proprietário

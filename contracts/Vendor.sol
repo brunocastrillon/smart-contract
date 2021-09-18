@@ -48,11 +48,11 @@ contract Vendor is Ownable {
         require(sent, "Failed to send ETH to the user");        
     }
 
-    function saque() public onlyOwner {
+    function sacar() public onlyOwner {
         uint256 saldoDono = address(this).balance;
         require(saldoDono > 0, "sem saldo para saque");
 
         (bool sent,) = msg.sender.call{value: address(this).balance}("");
-        require(sent, "falha ao enviar saldo do usuario de volta");
+        require(sent, "falha ao enviar saldo do usuario de volta ao proprietario");
     }    
 }

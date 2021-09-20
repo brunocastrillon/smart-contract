@@ -100,7 +100,26 @@ describe('vendor-dapp', function () {
             await expect(
                 _vendor.sacar({ from: _addr1 })
             ).to.be.revertedWith("Ownable: caller is not the owner");
-        });        
+        });
+
+        it('saque realizado com sucesso', async () => {
+            const ethOfTokenToBuy = ethers.utils.parseEther('1');
+      
+            // buyTokens operation
+            await vendorContract.connect(addr1).buyTokens({
+              value: ethOfTokenToBuy,
+            });
+      
+            // withdraw operation
+            const txWithdraw = await vendorContract.connect(owner).withdraw();
+      
+            // Check that the Vendor's balance has 0 eth
+            const vendorBalance = await ethers.provider.getBalance(vendorContract.address);
+            expect(vendorBalance).to.equal(0);
+      
+            // Check the the owner balance has changed of 1 eth
+            await expect(txWithdraw).to.changeEtherBalance(owner, ethOfTokenToBuy);
+          });
     });
 
     // describe('testando o metodo vender()', () => {

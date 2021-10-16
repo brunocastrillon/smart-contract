@@ -1,0 +1,169 @@
+{
+    "lote": "lote-001",
+    "bebida": "descrição do tipo de bebida", 
+    "variedade": "descrição do tipo de variedade", 
+    "safra": "ano/temporada da safra", 
+    "processo": "descrição do processo", 
+    "peneira": "descrição da peneira", 
+    "talhao": "descrição do talhao", 
+    "arquivos": [
+        "https://ipfs.infura.io/ipfs/QmWc6YHE815F8kExchG9kd2uSsv7ZF1iQNn23bt5iKC6K3/arquivo01",
+        "https://ipfs.infura.io/ipfs/QmWc6YHE815F8kExchG9kd2uSsv7ZF1iQNn23bt5iKC6K3/arquivo02",
+        "https://ipfs.infura.io/ipfs/QmWc6YHE815F8kExchG9kd2uSsv7ZF1iQNn23bt5iKC6K3/arquivo03"
+    ],
+    "eventos": [
+        {
+            "0": {
+                "descricao": "LoteCriado",
+                "estagio": "0",
+                "situacao": "0",
+                "data": "10-10-2021"
+            },
+            "1": {
+                "descricao": "LoteEnviado",
+                "estagio": "1",
+                "situacao": "1",
+                "data": "10-10-2021"
+            },
+            "2": {
+                "descricao": "LoteRecebido",
+                "estagio": "1",
+                "situacao": "2",
+                "data": "10-10-2021"
+            },
+            "3": {
+                "descricao": "LoteEnviado",
+                "estagio": "2",
+                "situacao": "1",
+                "data": "10-10-2021"
+            },
+            "4": {
+                "descricao": "LoteRecebido",
+                "estagio": "2",
+                "situacao": "2",
+                "data": "10-10-2021"
+            },
+            "5": {
+                "descricao": "LoteEnviado",
+                "estagio": "3",
+                "situacao": "1",
+                "data": "10-10-2021"
+            },
+            "6": {
+                "descricao": "LoteRecebido",
+                "estagio": "3",
+                "situacao": "2",
+                "data": "10-10-2021"
+            },
+            "7": {
+                "descricao": "LoteEnviado",
+                "estagio": "4",
+                "situacao": "1",
+                "data": "10-10-2021"
+            },
+            "8": {
+                "descricao": "LoteRecebido",
+                "estagio": "4",
+                "situacao": "2",
+                "data": "10-10-2021"
+            },
+            "9": {
+                "descricao": "LoteEnviado",
+                "estagio": "1",
+                "situacao": "1",
+                "data": "10-10-2021"
+            },
+            "10": {
+                "descricao": "LoteRecebido",
+                "estagio": "1",
+                "situacao": "2",
+                "data": "10-10-2021"
+            },
+            "11": {
+                "descricao": "LoteEnviado",
+                "estagio": "1",
+                "situacao": "1",
+                "data": "10-10-2021"
+            },
+            "12": {
+                "descricao": "LoteRecebido",
+                "estagio": "1",
+                "situacao": "2",
+                "data": "10-10-2021"
+            },
+            "13": {
+                "descricao": "LoteEnviado",
+                "estagio": "1",
+                "situacao": "1",
+                "data": "10-10-2021"
+            },
+            "14": {
+                "descricao": "LoteRecebido",
+                "estagio": "1",
+                "situacao": "2",
+                "data": "10-10-2021"
+            },
+            "15": {
+                "descricao": "LoteEnviado",
+                "estagio": "1",
+                "situacao": "1",
+                "data": "10-10-2021"
+            },
+            "16": {
+                "descricao": "LoteRecebido",
+                "estagio": "1",
+                "situacao": "2",
+                "data": "10-10-2021"
+            },
+            "17": {
+                "descricao": "LoteEnviado",
+                "estagio": "1",
+                "situacao": "1",
+                "data": "10-10-2021"
+            },
+            "2": {
+                "descricao": "LoteRecebido",
+                "estagio": "1",
+                "situacao": "2",
+                "data": "10-10-2021"
+            },
+            "1": {
+                "descricao": "LoteEnviado",
+                "estagio": "1",
+                "situacao": "1",
+                "data": "10-10-2021"
+            },
+            "2": {
+                "descricao": "LoteRecebido",
+                "estagio": "1",
+                "situacao": "2",
+                "data": "10-10-2021"
+            },
+            "1": {
+                "descricao": "LoteEnviado",
+                "estagio": "1",
+                "situacao": "1",
+                "data": "10-10-2021"
+            },
+            "2": {
+                "descricao": "LoteRecebido",
+                "estagio": "1",
+                "situacao": "2",
+                "data": "10-10-2021"
+            },
+            "1": {
+                "descricao": "LoteEnviado",
+                "estagio": "1",
+                "situacao": "1",
+                "data": "10-10-2021"
+            },
+            "2": {
+                "descricao": "LoteRecebido",
+                "estagio": "1",
+                "situacao": "2",
+                "data": "10-10-2021"
+            },                                                                                                                        
+        }
+    ],
+    "meta": "https://ipfs.infura.io/ipfs/QmWc6YHE815F8kExchG9kd2uSsv7ZF1iQNn23bt5iKC6K3/other"
+  }

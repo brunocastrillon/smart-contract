@@ -10,31 +10,72 @@ contract Madeira {
     }
 
     struct Lote {
-        int Id;
+        string Descricao;
+        string NomeFazenda; // TODO: esse campodeverá ser trocado pelo address da fazenda
+        uint Quantidade;
+        uint DataHora;
+        Status Situacao;
     }    
 
     struct Remessa {
-        int Id;
+        string Destino;
+        string Descricao;
+        uint DataHora;
+        Status Situacao;
     }
 
     Lote[] public _lotes;
 
+    event LoteAdicionado();
+    event RemessaRegistrada();
+
     constructor() {}
 
-    modifier somenteLoteValido() {
+    modifier somenteLoteValidoParaCadastro() {
+        _;
+    }    
+
+    modifier somenteLoteValidoParaPesquisa(uint id) {
+        require(id >= 0 && id < _lotes.length, "");
         _;
     }
 
-    function adicionarLote() public {
-        
+    modifier somenteRemessaValida() {
+        _;
+    }    
+
+    function adicionarLote
+    (
+        string memory descricao,
+        string memory nomeFazenda,
+        uint quantidade
+    )
+        public
+        somenteLoteValidoParaCadastro()
+        returns(uint)
+    {
+        uint dataHora = block.timestamp;
+        Lote memory novoLote = Lote(descricao, nomeFazenda, quantidade, dataHora, Status.Disponivel);
+        _lotes.push(novoLote);
+        emit LoteAdicionado();
+        return _lotes.length - 1;
     }
 
-    function informacaoLote() public {
-        
+    function informacaoLote
+    (
+        uint id
+    )
+        public
+        view
+        somenteLoteValidoParaPesquisa(id)
+        returns(string memory descricao, string memory nomeFazenda, uint quantidade, Status situacao)
+    {
+        Lote memory lote = _lotes[id];
+        return (lote.Descricao, lote.NomeFazenda, lote.Quantidade, lote.Situacao);
     }
 
-    function totalLotes() public {
-        
+    function totalLotes() public view returns(uint) {
+        return _lotes.length;
     }
 
     function registrarRemessa() public {

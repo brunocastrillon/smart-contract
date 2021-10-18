@@ -2,41 +2,60 @@
 pragma solidity >=0.4.22 <0.9.0;
 
 contract Madeira {
-    enum Status {
+    enum SituacaoLote {
         Disponivel,
-        Iniciada,
         Transito,
         Entregue
     }
 
-    struct Lote {
-        string Descricao;
-        string NomeFazenda; // TODO: esse campodeverá ser trocado pelo address da fazenda
-        uint Quantidade;
-        uint DataHora;
-        Status Situacao;
+    enum SituacaoRemessa {
+        Iniciada,
+        Transito,
+        Entregue
     }    
 
+    struct Lote {
+        string Descricao;
+        string NomeFazenda; //TODO: esse campodeverá ser trocado pelo address da fazenda
+        uint Quantidade;
+        uint DataHora;
+        uint TotalRemessa;
+        SituacaoLote Situacao;
+        //mapping (uint=>Remessa) Envio; //TODO: Struct containing a (nested) mapping cannot be constructed.
+    }    
+    // mapping (uint => Lote[]) public _lotes;
+    Lote[] public _lotes;
+    
     struct Remessa {
         string Destino;
         string Descricao;
         uint DataHora;
-        Status Situacao;
+        SituacaoRemessa Situacao;
     }
+    mapping (uint => Remessa) public _remessas;   
 
-    Lote[] public _lotes;
-
-    event LoteAdicionado();
-    event RemessaRegistrada();
+    event LoteAdicionado(string descricao, string nomeFazenda, uint quantidade);
+    event RemessaRegistrada(uint idLote, string destino, string descricao, uint dataHora, SituacaoRemessa situacao);
 
     constructor() {}
 
-    modifier somenteLoteValidoParaCadastro() {
+    modifier somenteInformacaoValida
+    (
+        string memory descricao,
+        string memory nomeFazenda,
+        uint quantidade
+    )
+    {
+        bytes memory descricaoTemp = bytes(descricao);
+        bytes memory nomeFazendaTemp = bytes(nomeFazenda);
+
+        bool informacaoValida = descricaoTemp.length == 0 || nomeFazendaTemp.length == 0 || quantidade == 0;
+        require(!informacaoValida, 'informacao invalida');
         _;
     }    
 
-    modifier somenteLoteValidoParaPesquisa(uint id) {
-        require(id >= 0 && id < _lotes.length, "");
+    modifier somenteLoteValido(uint id) {
+        require(id >= 0 && id < _lotes.length, "lote nao encontrado");
         _;
     }
 
@@ -51,38 +70,67 @@ contract Madeira {
         uint quantidade
     )
         public
-        somenteLoteValidoParaCadastro()
+        somenteInformacaoValida(descricao, nomeFazenda, quantidade)
         returns(uint)
     {
         uint dataHora = block.timestamp;
-        Lote memory novoLote = Lote(descricao, nomeFazenda, quantidade, dataHora, Status.Disponivel);
+        
+        Lote memory novoLote = Lote(descricao, nomeFazenda, quantidade, dataHora, 0, SituacaoLote.Disponivel);
         _lotes.push(novoLote);
-        emit LoteAdicionado();
+        
+        emit LoteAdicionado(descricao, nomeFazenda, quantidade);
+        
         return _lotes.length - 1;
     }
 
-    function informacaoLote
+    function obterLote
     (
         uint id
     )
         public
         view
-        somenteLoteValidoParaPesquisa(id)
-        returns(string memory descricao, string memory nomeFazenda, uint quantidade, Status situacao)
+        somenteLoteValido(id)
+        returns(string memory descricao, string memory nomeFazenda, uint quantidade, SituacaoLote situacao)
     {
         Lote memory lote = _lotes[id];
         return (lote.Descricao, lote.NomeFazenda, lote.Quantidade, lote.Situacao);
     }
 
-    function totalLotes() public view returns(uint) {
+    function contabilizarLotes() public view returns(uint) {
         return _lotes.length;
     }
 
-    function registrarRemessa() public {
-        
-    }
+    // function registrarRemessa
+    // (
+    //     uint idLote,
+    //     string memory destino,
+    //     string memory descricao,
+    //     SituacaoRemessa situacao
+    // )
+    //     public
+    //     somenteLoteValido(idLote)
+    //     returns (bool)
+    // {
+    //     Lote storage lote = _lotes[idLote];
+    //     uint dataHora = block.timestamp;
+    //     Remessa memory novaRemessa = Remessa(destino, descricao, dataHora, situacao);
 
-    function informacaoRemessa() public {
+    //     if(situacao == SituacaoRemessa.Iniciada) {
+    //         lote.Situacao = SituacaoLote.Transito;
+    //     } else if(situacao == SituacaoRemessa.Entregue) {
+    //         lote.Situacao = SituacaoLote.Entregue;
+    //     }
+
+    //     //lote.Envio[lote.totalRemessa] = novaRemessa;
+    //     _remessa[idLote] = novaRemessa;
+    //     lote.TotalRemessa++;
+
+    //     emit RemessaRegistrada(idLote, destino, descricao, dataHora, situacao);
         
-    }    
+    //     return true;
+    // }
+
+    // function informacaoRemessa() public {
+        
+    // }
 }

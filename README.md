@@ -1,2 +1,2 @@
 # smart-contract
-repositório de testes de smart contracts escritos em solidity
+Repositório para fins de estudos e prática de programação de smart contract utilizando Solidity

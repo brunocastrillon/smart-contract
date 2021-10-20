@@ -1,20 +1,12 @@
 // SPDX-License-Identifier: MIT
-pragma solidity >=0.4.22 <0.9.0;
+pragma solidity >=0.6.0 <0.9.0;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/utils/Counters.sol";
 
 contract Store is Ownable {
-	using Counters for Counters.Counter;
-    Counters.Counter private _orderSeq;
-	Counters.Counter private _invoiceSeq;
-
-	struct ItemMenu {
-		uint Id;
-	}
+	address private _owner;
 
     struct Order {
-		uint Number;
 		string ItemMenu;
 		uint Price;
 		uint Quantity;		
@@ -23,24 +15,22 @@ contract Store is Ownable {
 		uint DeliveryDate;
 		bool Created;
 	}
+	mapping (address => Order[]) _orders;
 
     struct Invoice {
-		uint Number;
 		uint OrderNumber;
 		bool Created;
 	}
-
-	mapping (address => Order[]) _orders;
 	mapping (address => Invoice[]) _invoices;
     
 	event OrderDispatched(string itemMenu, uint quantity, uint orderDate, uint orderNumber, address customer);
-	event PriceSubmitted(uint orderNumber, uint price);     
-	event PaymentSent(uint orderNumber, uint value, uint now);
+	event PriceSubmitted(uint orderNumber, uint orderPrice);     
+	event PaymentSent(uint orderNumber, uint payment, uint paymentDate);
 	event InvoiceSent(uint invoiceNumber, uint orderNumber, uint deliveryDate);
 	event OrderDelivered(uint invoiceNumber, uint orderNumber, uint actualDeliveryDate);
 
     constructor() payable {
-
+		_owner = msg.sender;
 	}
 
 	//TODO: - Criar modificador para validar a data/hora do pedido
@@ -68,11 +58,7 @@ contract Store is Ownable {
 		public
 		OnlyOrderValidInformation(itemMenu, quantity)
 	{
-		_orderSeq.increment();
-		uint256 newOrderNumber = _orderSeq.current();
-
 		_orders[msg.sender].push(Order({
-			Number: newOrderNumber,
 			ItemMenu: itemMenu,
 			Price: 0,
 			Quantity: quantity,
@@ -82,7 +68,9 @@ contract Store is Ownable {
 			Created: true
 		}));
 
-		emit OrderDispatched(itemMenu, quantity, dateTime, newOrderNumber, msg.sender);
+		uint indexOrder = _orders[msg.sender].length;
+
+		emit OrderDispatched(itemMenu, quantity, dateTime, indexOrder, msg.sender);
 	}
 
     function checkOrder
@@ -97,38 +85,65 @@ contract Store is Ownable {
 			uint price,
 			uint payment,
 			uint orderDate,
-			uint deliveryDate,
-			uint orderId
+			uint deliveryDate
 		)
 	{
 		Order memory order = _orders[msg.sender][index];
-		return(order.ItemMenu, order.Quantity, order.Price, order.Payment, order.OrderDate, order.DeliveryDate, order.Number);
+		return(order.ItemMenu, order.Quantity, order.Price, order.Payment, order.OrderDate, order.DeliveryDate);
 	}
 
 
-	// function sendPrice
-	// (
-	// 	// uint orderId,
-	// 	// uint price
-	// 	uint index,
-	// 	uint price
-	// )
-	// 	public
-	// 	onlyOwner
-	// 	payable
-	// {
-	// 	Order memory order = _orders[msg.sender][index];
-	// 	Order memory orderUpdated;
+	function sendPrice
+	(
+		uint index,
+		uint price,
+		address customer
+	)
+		public
+		onlyOwner
+		payable
+	{
+		Order memory orderOld = _orders[customer][index];
+		Order memory orderUpdated;
 
-	// 	orderUpdated.Number = order.Number;
+		orderUpdated.ItemMenu = orderOld.ItemMenu;
+		orderUpdated.Price = price;
+		orderUpdated.Quantity = orderOld.Quantity;
+		orderUpdated.Payment = orderOld.Payment;
+		orderUpdated.OrderDate = orderOld.OrderDate;
+		orderUpdated.DeliveryDate = orderOld.DeliveryDate;
+		orderUpdated.Created = orderOld.Created;
 
+		delete _orders[customer][index];
+		_orders[customer][index] = orderUpdated;
 
-	// 	delete _orders[msg.sender][index];
-	// 	_orders[msg.sender][index] = orderUpdated;
+		emit PriceSubmitted(index, price);
+	}
 
+    function sendPayment
+	(
+		uint index,
+		uint paymentDate
+	)
+		public
+		payable
+	{
+		Order memory orderOld = _orders[msg.sender][index];
+		Order memory orderUpdated;
 
-	// 	emit PriceSubmitted(index, price);
-	// }
+		orderUpdated.ItemMenu = orderOld.ItemMenu;
+		orderUpdated.Price = orderOld.Price;
+		orderUpdated.Quantity = orderOld.Quantity;
+		orderUpdated.Payment = msg.value;
+		orderUpdated.OrderDate = orderOld.OrderDate;
+		orderUpdated.DeliveryDate = orderOld.DeliveryDate;
+		orderUpdated.Created = orderOld.Created;
+
+		delete _orders[msg.sender][index];
+		_orders[msg.sender][index] = orderUpdated;		
+
+		emit PaymentSent(index, msg.value, paymentDate);
+	}
 
     function total()
         public
@@ -137,21 +152,6 @@ contract Store is Ownable {
     {
         return _orders[msg.sender].length;
     }	
-
-
-
-    // function enviarPagamentoSeguro
-	// (
-	// 	uint idPedido
-	// )
-	// 	public
-	// 	SomenteCliente
-	// 	PedidoExiste(idPedido)
-	// 	payable
-	// {
-	// 	_pedidos[idPedido].PagamentoSeguro = msg.value;
-	// 	emit PagamentoSeguroEnviado(msg.sender, idPedido, msg.value, block.timestamp);
-	// }
 
     // function enviarFatura
 	// (

@@ -9,17 +9,15 @@ contract Store is Ownable {
     Counters.Counter private _orderSeq;
 	Counters.Counter private _invoiceSeq;
 
-    address public _owner;
-
 	struct ItemMenu {
 		uint Id;
 	}
 
     struct Order {
-		uint Id;
+		uint Number;
 		string ItemMenu;
-		uint Quantity;		
 		uint Price;
+		uint Quantity;		
 		uint Payment;
 		uint OrderDate;
 		uint DeliveryDate;
@@ -27,23 +25,25 @@ contract Store is Ownable {
 	}
 
     struct Invoice {
-		uint Id;
-		uint OrderId;
+		uint Number;
+		uint OrderNumber;
 		bool Created;
 	}
 
-	mapping (uint => Order) _orders;
-	mapping (uint => Invoice) _invoices;
+	mapping (address => Order[]) _orders;
+	mapping (address => Invoice[]) _invoices;
     
-	event OrderDispatched(address customer, string itemMenu, uint quantity, uint orderId);
-	event PriceSubmitted(address customer, uint itemMenu, uint price);     
-	event PaymentSent(address customer, uint orderId, uint value, uint now);
-	event InvoiceSent(address customer, uint invoiceId, uint orderId, uint deliveryDate);
-	event OrderDelivered(address customer, uint invoiceId, uint orderId, uint actualDeliveryDate);
+	event OrderDispatched(string itemMenu, uint quantity, uint orderDate, uint orderNumber, address customer);
+	event PriceSubmitted(uint orderNumber, uint price);     
+	event PaymentSent(uint orderNumber, uint value, uint now);
+	event InvoiceSent(uint invoiceNumber, uint orderNumber, uint deliveryDate);
+	event OrderDelivered(uint invoiceNumber, uint orderNumber, uint actualDeliveryDate);
 
     constructor() payable {
-		_owner = msg.sender;
+
 	}
+
+	//TODO: - Criar modificador para validar a data/hora do pedido
 
     modifier OnlyOrderValidInformation
     (
@@ -58,63 +58,87 @@ contract Store is Ownable {
         _;
     }
 
-	modifier OnlyExistingOrder(uint id) {
-		require(_orders[id].Created,"pedido nao existe");
-		_;
-	}
-
-	modifier OnlyExistingInvoice(uint id) {
-		require(
-			_invoices[id].Created,"fatura nao existe");
-		_;
-	}	
-
     function sendOrder
 	(
 		string memory itemMenu,
-		uint quantity
+		uint quantity,
+		uint dateTime
 	)
 		payable
 		public
 		OnlyOrderValidInformation(itemMenu, quantity)
 	{
 		_orderSeq.increment();
-		uint256 newOrderId = _orderSeq.current();
+		uint256 newOrderNumber = _orderSeq.current();
 
-		_orders[newOrderId] = Order(newOrderId, itemMenu, quantity, 0, 0, 0, 0, true);
-		emit OrderDispatched(msg.sender, itemMenu, quantity, newOrderId);
+		_orders[msg.sender].push(Order({
+			Number: newOrderNumber,
+			ItemMenu: itemMenu,
+			Price: 0,
+			Quantity: quantity,
+			Payment: 0,
+			OrderDate: dateTime,
+			DeliveryDate: 0,
+			Created: true
+		}));
+
+		emit OrderDispatched(itemMenu, quantity, dateTime, newOrderNumber, msg.sender);
 	}
 
-    // function verificarPedido
-	// (
-	// 	uint idPedido
-	// )
-	// 	view
-	// 	public
-	// 	PedidoExiste(idPedido)
-	// 	returns (address cliente, string memory itemMenu, uint quantidade, uint preco, uint pagmentoSeguro) {		
-	// 	return(
-	// 		_cliente,
-	// 		_pedidos[idPedido].ItemMenu,
-	// 		_pedidos[idPedido].Quantidade,
-	// 		_pedidos[idPedido].Preco,
-	// 		_pedidos[idPedido].PagamentoSeguro
-	// 		);
-	// }
+    function checkOrder
+	(
+		uint index
+	)
+		public
+		view
+		returns (
+			string memory itemMenu,
+			uint quantity,
+			uint price,
+			uint payment,
+			uint orderDate,
+			uint deliveryDate,
+			uint orderId
+		)
+	{
+		Order memory order = _orders[msg.sender][index];
+		return(order.ItemMenu, order.Quantity, order.Price, order.Payment, order.OrderDate, order.DeliveryDate, order.Number);
+	}
 
-	// function enviarPreco
+
+	// function sendPrice
 	// (
-	// 	uint idPedido,
-	// 	uint preco
+	// 	// uint orderId,
+	// 	// uint price
+	// 	uint index,
+	// 	uint price
 	// )
 	// 	public
 	// 	onlyOwner
-	// 	PedidoExiste(idPedido)
 	// 	payable
 	// {
-	// 	_pedidos[idPedido].Preco = preco;
-	// 	emit PrecoEnviado(_cliente, idPedido, preco);
+	// 	Order memory order = _orders[msg.sender][index];
+	// 	Order memory orderUpdated;
+
+	// 	orderUpdated.Number = order.Number;
+
+
+	// 	delete _orders[msg.sender][index];
+	// 	_orders[msg.sender][index] = orderUpdated;
+
+
+	// 	emit PriceSubmitted(index, price);
 	// }
+
+    function total()
+        public
+        view
+        returns (uint)
+    {
+        return _orders[msg.sender].length;
+    }	
+
+
 
     // function enviarPagamentoSeguro
 	// (

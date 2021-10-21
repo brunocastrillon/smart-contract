@@ -23,9 +23,10 @@ describe('manage-store', () => {
         sendOrder: (itemMenu: string, quantity: number, dateTime: number, sender: { from: string }) => any;
         checkOrder: (index: number, sender: { from: string }) => any;
         sendPrice: (index: number, price: number, customer: string, sender: { from: string }) => any;
-        total: (sender: { from: string }) => any;
         sendPayment: (index: number, paymentDate: number, sender: { from: string, value: number }) => any;
+        sendInvoice: (index: number, orderDate: number, sender: { from: string }) => any;
         address : any;
+        // total: (sender: { from: string }) => any;
         // enviarFatura: (arg0: string, arg1: string, arg2: { from: string; }) => any;
         // obterFatura:(arg0: number, arg1: { from: string; }) => any;
         // MarcarPedidoEntregue:(arg0: string, arg1: string, arg2: { from: string; }) => any;
@@ -115,6 +116,29 @@ describe('manage-store', () => {
 
             assert.equal(saldoAtual, _payment);
         });        
+    });
+
+    describe('Testando a função sendInvoice()', () => {
+        it('Usuário que não é dono do contrato, tentou enviar uma fatura, deverá retornar - Ownable: caller is not the owner', async () => {
+            await _store.sendOrder(_itemMenu, _quantity, _orderDate, { from: _customer });
+            await _store.sendPrice(_orderIndex, _price, _customer, { from: _owner });
+            await _store.sendPayment(_orderIndex, _paymentDate, { from: _customer, value: _payment });
+
+            await expect(
+                _store.sendInvoice(_orderIndex, _orderDate, { from: _customer })
+            ).to.be.revertedWith("Ownable: caller is not the owner");            
+        });
+
+        it('Ao enviar a fatura com sucesso, deverá retornar um evento: InvoiceSent()', async () => {
+            await _store.sendOrder(_itemMenu, _quantity, _orderDate, { from: _customer });
+            await _store.sendPrice(_orderIndex, _price, _customer, { from: _owner });
+            await _store.sendPayment(_orderIndex, _paymentDate, { from: _customer, value: _payment });
+            const store = await _store.sendInvoice(_orderIndex, _orderDate, { from: _owner });
+
+            truffleAssert.eventEmitted(store, 'InvoiceSent', (ev: { invoiceNumber: number, orderNumber: number, orderDate: number }) => {
+                return ev.invoiceNumber == _invoiceIndex+1 && ev.orderNumber == _orderIndex && ev.orderDate == _orderDate;
+            });            
+        });
     });
 
     // it("Deverá retornar o total de pedidos", async () => {

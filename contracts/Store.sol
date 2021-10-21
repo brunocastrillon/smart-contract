@@ -18,7 +18,7 @@ contract Store is Ownable {
 	mapping (address => Order[]) _orders;
 
     struct Invoice {
-		uint OrderNumber;
+		uint orderIndex;
 		bool Created;
 	}
 	mapping (address => Invoice[]) _invoices;
@@ -26,7 +26,7 @@ contract Store is Ownable {
 	event OrderDispatched(string itemMenu, uint quantity, uint orderDate, uint orderNumber, address customer);
 	event PriceSubmitted(uint orderNumber, uint orderPrice);     
 	event PaymentSent(uint orderNumber, uint payment, uint paymentDate);
-	event InvoiceSent(uint invoiceNumber, uint orderNumber, uint deliveryDate);
+	event InvoiceSent(uint invoiceNumber, uint orderNumber, uint orderDate);
 	event OrderDelivered(uint invoiceNumber, uint orderNumber, uint actualDeliveryDate);
 
     constructor() payable {
@@ -145,29 +145,38 @@ contract Store is Ownable {
 		emit PaymentSent(index, msg.value, paymentDate);
 	}
 
-    function total()
-        public
-        view
-        returns (uint)
-    {
-        return _orders[msg.sender].length;
-    }	
+    function sendInvoice
+	(
+		uint index,
+		uint orderDate
+	)
+		public
+		onlyOwner
+		// payable
+	{
+		_invoices[msg.sender].push(Invoice({
+			orderIndex: index,
+			Created: true
+		}));
 
-    // function enviarFatura
-	// (
-	// 	uint idPedido,
-	// 	uint dataPedido
-	// )
-	// 	public
-	// 	onlyOwner
-	// 	PedidoExiste(idPedido)
-	// 	payable
-	// {
-	// 	_sequencialFatura++;
-	// 	_faturas[_sequencialFatura] = Fatura(_sequencialFatura, idPedido, true);
-	// 	_pedidos[idPedido].DataPedido = dataPedido;
-	// 	emit FaturaEnviada(_cliente, _sequencialFatura, idPedido, dataPedido);
-	// }
+		uint invoiceIndex = _invoices[msg.sender].length;
+
+		emit InvoiceSent(invoiceIndex, index, orderDate);
+	}
+
+
+
+
+
+
+
+    // function total()
+    //     public
+    //     view
+    //     returns (uint)
+    // {
+    //     return _orders[msg.sender].length;
+    // }	
 
     // function obterFatura
 	// (

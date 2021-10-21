@@ -2,7 +2,8 @@ import assert = require('assert');
 
 import {
     accounts,
-    contract
+    contract,
+    web3
 } from '@openzeppelin/test-environment';
 
 const {
@@ -24,6 +25,7 @@ describe('manage-store', () => {
         sendPrice: (index: number, price: number, customer: string, sender: { from: string }) => any;
         total: (sender: { from: string }) => any;
         sendPayment: (index: number, paymentDate: number, sender: { from: string, value: number }) => any;
+        address : any;
         // enviarFatura: (arg0: string, arg1: string, arg2: { from: string; }) => any;
         // obterFatura:(arg0: number, arg1: { from: string; }) => any;
         // MarcarPedidoEntregue:(arg0: string, arg1: string, arg2: { from: string; }) => any;
@@ -94,7 +96,7 @@ describe('manage-store', () => {
         });
     });
 
-    describe('Testando a função sendPayment', () => {
+    describe('Testando a função sendPayment', async () => {
         it('Ao realizar um pagamento com suceso, deverá retornar um event: PaymentSent()', async () => {
             await _store.sendOrder(_itemMenu, _quantity, _orderDate, { from: _customer });
             await _store.sendPrice(_orderIndex, _price, _customer, { from: _owner });
@@ -104,12 +106,21 @@ describe('manage-store', () => {
                 return ev.orderNumber == _orderIndex && ev.payment == _payment && ev.paymentDate == _paymentDate;
             });            
         });
+
+        it('Validando o saldo do contrato após o pagamento', async () => {
+            await _store.sendOrder(_itemMenu, _quantity, _orderDate, { from: _customer });
+            await _store.sendPrice(_orderIndex, _price, _customer, { from: _owner });
+            await _store.sendPayment(_orderIndex, _paymentDate, { from: _customer, value: _payment });
+            let saldoAtual = await web3.eth.getBalance(_store.address);
+
+            assert.equal(saldoAtual, _payment);
+        });        
     });
 
-    it("Deverá retornar o total de pedidos", async () => {
-        await _store.sendOrder(_itemMenu, _quantity, _orderDate, { from: _customer });
-        let pedidos = await _store.total({ from: _customer });
+    // it("Deverá retornar o total de pedidos", async () => {
+    //     await _store.sendOrder(_itemMenu, _quantity, _orderDate, { from: _customer });
+    //     let pedidos = await _store.total({ from: _customer });
 
-        assert.equal(pedidos, 1);
-    });
+    //     assert.equal(pedidos, 1);
+    // });
 });

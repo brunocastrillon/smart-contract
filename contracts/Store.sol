@@ -18,16 +18,17 @@ contract Store is Ownable {
 	mapping (address => Order[]) _orders;
 
     struct Invoice {
-		uint orderIndex;
+		uint OrderIndex;
+		uint InvoiceDate;
 		bool Created;
 	}
 	mapping (address => Invoice[]) _invoices;
     
-	event OrderDispatched(string itemMenu, uint quantity, uint orderDate, uint orderNumber, address customer);
-	event PriceSubmitted(uint orderNumber, uint orderPrice);     
-	event PaymentSent(uint orderNumber, uint payment, uint paymentDate);
-	event InvoiceSent(uint invoiceNumber, uint orderNumber, uint orderDate);
-	event OrderDelivered(uint invoiceNumber, uint orderNumber, uint actualDeliveryDate);
+	event OrderDispatched(string itemMenu, uint quantity, uint orderDate, uint orderIndex, address customer);
+	event PriceSubmitted(uint orderIndex, uint orderPrice);     
+	event PaymentSent(uint orderIndex, uint payment, uint paymentDate);
+	event InvoiceSent(uint invoiceIndex, uint orderIndex, uint invoiceDate);
+	event OrderDelivered(uint invoiceIndex, uint orderIndex, uint actualDeliveryDate);
 
     constructor() payable {
 		_owner = msg.sender;
@@ -68,14 +69,14 @@ contract Store is Ownable {
 			Created: true
 		}));
 
-		uint indexOrder = _orders[msg.sender].length;
+		uint orderIndex = _orders[msg.sender].length;
 
-		emit OrderDispatched(itemMenu, quantity, dateTime, indexOrder, msg.sender);
+		emit OrderDispatched(itemMenu, quantity, dateTime, orderIndex, msg.sender);
 	}
 
     function checkOrder
 	(
-		uint index
+		uint orderIndex
 	)
 		public
 		view
@@ -88,14 +89,13 @@ contract Store is Ownable {
 			uint deliveryDate
 		)
 	{
-		Order memory order = _orders[msg.sender][index];
+		Order memory order = _orders[msg.sender][orderIndex];
 		return(order.ItemMenu, order.Quantity, order.Price, order.Payment, order.OrderDate, order.DeliveryDate);
 	}
 
-
 	function sendPrice
 	(
-		uint index,
+		uint orderIndex,
 		uint price,
 		address customer
 	)
@@ -103,7 +103,7 @@ contract Store is Ownable {
 		onlyOwner
 		payable
 	{
-		Order memory orderOld = _orders[customer][index];
+		Order memory orderOld = _orders[customer][orderIndex];
 		Order memory orderUpdated;
 
 		orderUpdated.ItemMenu = orderOld.ItemMenu;
@@ -114,21 +114,21 @@ contract Store is Ownable {
 		orderUpdated.DeliveryDate = orderOld.DeliveryDate;
 		orderUpdated.Created = orderOld.Created;
 
-		delete _orders[customer][index];
-		_orders[customer][index] = orderUpdated;
+		delete _orders[customer][orderIndex];
+		_orders[customer][orderIndex] = orderUpdated;
 
-		emit PriceSubmitted(index, price);
+		emit PriceSubmitted(orderIndex, price);
 	}
 
     function sendPayment
 	(
-		uint index,
+		uint orderIndex,
 		uint paymentDate
 	)
 		public
 		payable
 	{
-		Order memory orderOld = _orders[msg.sender][index];
+		Order memory orderOld = _orders[msg.sender][orderIndex];
 		Order memory orderUpdated;
 
 		orderUpdated.ItemMenu = orderOld.ItemMenu;
@@ -139,73 +139,86 @@ contract Store is Ownable {
 		orderUpdated.DeliveryDate = orderOld.DeliveryDate;
 		orderUpdated.Created = orderOld.Created;
 
-		delete _orders[msg.sender][index];
-		_orders[msg.sender][index] = orderUpdated;		
+		delete _orders[msg.sender][orderIndex];
+		_orders[msg.sender][orderIndex] = orderUpdated;		
 
-		emit PaymentSent(index, msg.value, paymentDate);
+		emit PaymentSent(orderIndex, msg.value, paymentDate);
 	}
 
     function sendInvoice
 	(
-		uint index,
-		uint orderDate
+		uint orderIndex,
+		uint invoiceDate,
+		address customer
 	)
 		public
 		onlyOwner
-		// payable
 	{
-		_invoices[msg.sender].push(Invoice({
-			orderIndex: index,
+		_invoices[customer].push(Invoice({
+			OrderIndex: orderIndex,
+			InvoiceDate: invoiceDate,
 			Created: true
 		}));
 
-		uint invoiceIndex = _invoices[msg.sender].length;
+		uint invoiceIndex = _invoices[customer].length;
 
-		emit InvoiceSent(invoiceIndex, index, orderDate);
+		emit InvoiceSent(invoiceIndex, orderIndex, invoiceDate);
 	}
 
+	function checkInvoice
+	(
+		uint invoiceIndex
+	)
+		public
+		view
+		returns (
+			uint orderIndex,
+			uint invoiceDate
+		)
+	{
+		Invoice memory invoice = _invoices[msg.sender][invoiceIndex];
+		return(invoice.OrderIndex, invoice.InvoiceDate);
+	}
 
+	function deliver
+	(
+		uint invoiceIndex,
+		uint deliveryDate
+	)
+		public
+	{
+		Invoice memory invoice = _invoices[msg.sender][invoiceIndex];
+		Order memory orderOld = _orders[msg.sender][invoice.OrderIndex];
 
+		Order memory orderUpdated;
 
+		orderUpdated.ItemMenu = orderOld.ItemMenu;
+		orderUpdated.Price = orderOld.Price;
+		orderUpdated.Quantity = orderOld.Quantity;
+		orderUpdated.Payment = orderOld.Payment;
+		orderUpdated.OrderDate = orderOld.OrderDate;
+		orderUpdated.DeliveryDate = deliveryDate;
+		orderUpdated.Created = orderOld.Created;
 
+		delete _orders[msg.sender][invoice.OrderIndex];
+		_orders[msg.sender][invoice.OrderIndex] = orderUpdated;
 
+		emit OrderDelivered(invoiceIndex, invoice.OrderIndex, deliveryDate);
+	}
 
-    // function total()
-    //     public
-    //     view
-    //     returns (uint)
-    // {
-    //     return _orders[msg.sender].length;
-    // }	
+    function totalOrder()
+        public
+        view
+        returns (uint)
+    {
+        return _orders[msg.sender].length;
+    }
 
-    // function obterFatura
-	// (
-	// 	uint idFatura
-	// )
-	// 	public
-	// 	view
-	// 	FaturaExiste(idFatura)
-	// 	returns (address cliente, uint idPedido, uint dataFatura)
-	// {
-	// 	Fatura storage fatura = _faturas[idFatura];
-	// 	Pedido storage pedido = _pedidos[fatura.IdPedido];
-	// 	return (_cliente, pedido.Id, pedido.DataPedido);
-	// }
-
-    // function MarcarPedidoEntregue
-	// (
-	// 	uint idFatura,
-	// 	uint dataEntrega
-	// )
-	// 	public
-	// 	SomenteCliente
-	// 	FaturaExiste(idFatura)
-	// 	payable
-	// {
-	// 	Fatura storage fatura = _faturas[idFatura];
-	// 	Pedido storage pedido = _pedidos[fatura.IdPedido];
-	// 	pedido.DataEntrega = dataEntrega;
-	// 	payable(_dono).transfer(pedido.PagamentoSeguro);
-	// 	emit PedidoEntregue(_cliente, idFatura, pedido.Id, dataEntrega); 
-	// }    
+    function totalInvoice()
+        public
+        view
+        returns (uint)
+    {
+        return _invoices[msg.sender].length;
+    }	
 }

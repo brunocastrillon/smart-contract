@@ -8,8 +8,8 @@ contract TokenVendor is Ownable {
     Token _token;
     uint256 public _parity = 100; // - 100 tkn = 1 eth
 
-    event purchasedToken(address buyer, uint256 ethAmount, uint256 tknAmount);
-    event soldToken(address vendedor, uint256 tknAmount, uint256 ethAmount);
+    event PurchasedToken(address buyer, uint256 ethAmount, uint256 tknAmount);
+    event SoldToken(address vendedor, uint256 tknAmount, uint256 ethAmount);
 
     constructor(address tokenAddress) {
         _token = Token(tokenAddress);
@@ -59,7 +59,7 @@ contract TokenVendor is Ownable {
         (bool sent) = _token.transfer(msg.sender, amountToBuy);
         require(sent, "falha ao transferir tokens");
 
-         emit purchasedToken(msg.sender, msg.value, amountToBuy);
+         emit PurchasedToken(msg.sender, msg.value, amountToBuy);
 
          return amountToBuy;
     }

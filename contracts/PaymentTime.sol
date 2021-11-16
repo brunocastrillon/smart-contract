@@ -12,6 +12,7 @@ contract PaymentTime is Ownable, PaymentStage {
     uint256 constant _month = 2592000; // - mes com 30 dias
     uint256 constant _year = 31536000;
     uint256 constant _leapYear = 31622400;
+    uint256 constant _originYear = 1970;
 
     struct DateTime {
         uint16 Year;
@@ -149,23 +150,73 @@ contract PaymentTime is Ownable, PaymentStage {
 
     function parseTimeStamp
     (
-        uint256 timeStamp
+        uint256 timestamp
     )
         internal
         pure
-        returns (DateTime memory dt)
+        returns (DateTime memory dateTime)
     {
-        
+        uint256 secondsAccountedFor = 0;
+        uint256 buf;
+        uint8 i;
+
+        // Year
+        dateTime.Year = getYear(timestamp);
+        buf = leapYearsBefore(dateTime.Year) - leapYearsBefore(_originYear);
+
+        secondsAccountedFor += _leapYear * buf;
+        secondsAccountedFor += _year * (dateTime.Year - _originYear - buf);
+
+        // Month
+        uint256 secondsInMonth;
+        for (i = 1; i <= 12; i++) {
+            secondsInMonth = _day * getDaysInMonth(i, dateTime.Year);
+            if (secondsInMonth + secondsAccountedFor > timestamp) {
+                dateTime.Month = i;
+                break;
+            }
+            secondsAccountedFor += secondsInMonth;
+        }
+
+        for (i = 1; i <= getDaysInMonth(dateTime.Month, dateTime.Year); i++) {
+            if (_day + secondsAccountedFor > timestamp) {
+                dateTime.Day = i;
+                break;
+            }
+            secondsAccountedFor += _day;
+        }
     }    
 
     function getYear
     (
-        uint256 timeStamp
+        uint256 timestamp
     )
         private
         pure
+        returns (uint16)
     {
-        
+        uint256 secondsAccountedFor = 0;
+        uint16 year;
+        uint256 numLeapYears;
+
+        // Year
+        year = uint16(_originYear + timestamp / _year);
+        numLeapYears = leapYearsBefore(year) - leapYearsBefore(_originYear);
+
+        secondsAccountedFor += _leapYear * numLeapYears;
+        secondsAccountedFor +=
+            _year *
+            (year - _originYear - numLeapYears);
+
+        while (secondsAccountedFor > timestamp) {
+            if (isLeapYear(uint16(year - 1))) {
+                secondsAccountedFor -= _leapYear;
+            } else {
+                secondsAccountedFor -= _year;
+            }
+            year -= 1;
+        }
+        return year;
     }
 
     function getMonth
@@ -213,4 +264,64 @@ contract PaymentTime is Ownable, PaymentStage {
     {
         
     }
+
+    function leapYearsBefore
+    (
+        uint256 year
+    )
+        private
+        pure
+        returns (uint256)
+    {
+        uint256 temp = year -= 1;
+        return temp / 4 - temp / 100 + temp / 400;
+    }
+
+    function getDaysInMonth
+    (
+        uint8 month,
+        uint16 year
+    )
+        private
+        pure
+        returns (uint8)
+    {
+        if (
+            month == 1 ||
+            month == 3 ||
+            month == 5 ||
+            month == 7 ||
+            month == 8 ||
+            month == 10 ||
+            month == 12
+        ) {
+            return 31;
+        } else if (month == 4 || month == 6 || month == 9 || month == 11) {
+            return 30;
+        } else if (isLeapYear(year)) {
+            return 29;
+        } else {
+            return 28;
+        }
+    }
+
+    function isLeapYear
+    (
+        uint16 year
+    )
+        private
+        pure
+        returns (bool)
+    {
+        if (year % 4 != 0) {
+            return false;
+        }
+        if (year % 100 != 0) {
+            return true;
+        }
+        if (year % 400 != 0) {
+            return false;
+        }
+        return true;
+    }    
 }
